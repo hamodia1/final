@@ -1,0 +1,88 @@
+/* Full page container to center the sign-in box */
+.full-page-container {
+    min-height: 100vh; /* Full viewport height */
+    display: flex;
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    background-color: #e0e0e0; /* Background color for the page */
+  }
+  
+  /* Container for the sign-in form */
+  .signin-container {
+    width: 100%;
+    max-width: 300px;
+    padding: 40px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1); /* Full shadow for depth */
+  }
+  
+  /* Form heading */
+  .signin-container h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+  }
+  
+  /* Error message styling */
+  .error-message {
+    color: red;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  
+  /* Form layout and styling */
+  .signin-form .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .signin-form label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 5px;
+    color: #555;
+  }
+  
+  .signin-form input {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+  }
+  
+  .signin-form input:focus {
+    border-color: #007bff;
+    outline: none;
+  }
+  
+  /* Button styling */
+  .submit-button {
+    width: 100%;
+    padding: 12px;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .submit-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+  }
+  
+  .submit-button:hover:not(:disabled) {
+    background-color: #0056b3;
+  }
+  
+  /* Responsive layout */
+  @media (max-width: 768px) {
+    .signin-container {
+      padding: 20px;
+    }
+  }
+  

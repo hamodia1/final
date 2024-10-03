@@ -1,0 +1,137 @@
+/* Full-page layout for the CompanyHome component */
+.full-page-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f7f7f7;
+    padding: 40px;
+    box-sizing: border-box;
+}
+
+/* Container for the company home content */
+.company-home-container {
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    max-width: 900px;
+    width: 100%;
+    text-align: center;
+}
+
+/* Styling for the title */
+.company-home-container h1 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 30px;
+}
+
+/* Horizontal navigation bar */
+.navigation {
+    margin-bottom: 30px;
+}
+
+.navigation ul {
+    display: flex;
+    justify-content: space-around;
+    padding: 0;
+    list-style: none;
+    background-color: #007bff;
+    border-radius: 5px;
+}
+
+.navigation ul li {
+    margin: 0;
+}
+
+.navigation ul li a {
+    display: block;
+    padding: 15px 20px;
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.navigation ul li a:hover {
+    background-color: #0056b3;
+}
+
+/* Styling for upload sections */
+.upload-section {
+    margin-bottom: 30px;
+    text-align: left;
+}
+
+.upload-section h3 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.file-input {
+    display: block;
+    margin-bottom: 10px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.upload-button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.upload-button:hover {
+    background-color: #0056b3;
+}
+
+/* Section for running algorithm */
+.run-section {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.run-section h3 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.run-button {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-right: 10px;
+    transition: background-color 0.3s ease;
+}
+
+.run-button:hover {
+    background-color: #218838;
+}
+
+.message {
+    color: green;
+    margin-top: 20px;
+    font-size: 16px;
+}
+
+.success-message {
+    color: green;
+    margin-top: 10px;
+  }
+  
+  .error-message {
+    color: red;
+    margin-top: 10px;
+  }
+  
