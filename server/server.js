@@ -18,7 +18,7 @@ const port = 8383;
 const pool = new Pool({
   user: 'postgres',
   host: 'localhost',
-  database: 'your_postgres_db',
+  database: 'companies',
   password: '2312',
   port: 5432,
 });
@@ -72,7 +72,6 @@ app.post('/upload-employees', authenticateToken, upload.single('file'), async (r
       fs.createReadStream(filePath)
       .pipe(csv())
       .on('data', (row) => {
-          console.log('Processing row:', row); // Log the row data to see what's being parsed
   
           // Destructure the row into variables with matching case
           const { id, Name, Skill1, Skill2, Skill3, Shift_Wanted } = row;
@@ -94,7 +93,6 @@ app.post('/upload-employees', authenticateToken, upload.single('file'), async (r
               for (const employee of employeeData) {
                   try {
                       await pool.query(query, employee);
-                      console.log('Inserted:', employee); // Confirm insertion
                   } catch (err) {
                       console.error('Error inserting data:', err); // Log any errors during insertion
                   }
@@ -139,7 +137,6 @@ app.post('/upload-shifts', authenticateToken, upload.single('file'), async (req,
       fs.createReadStream(filePath)
           .pipe(csv())
           .on('data', (row) => {
-              console.log('Processing row:', row); // Log the row data to see what's being parsed
 
               // Destructure the row into variables
               const { Skill, Day, 'From Hour': timeBegin, 'To Hour': timeEnd, 'Shift Cost': price } = row;
@@ -161,7 +158,6 @@ app.post('/upload-shifts', authenticateToken, upload.single('file'), async (req,
                   for (const shift of shiftData) {
                       try {
                           await pool.query(query, shift);
-                          console.log('Inserted shift:', shift); // Confirm insertion
                       } catch (err) {
                           console.error('Error inserting shift data:', err); // Log any errors during insertion
                       }
@@ -205,8 +201,7 @@ app.post('/upload-require-employees', authenticateToken, upload.single('file'), 
       fs.createReadStream(filePath)
           .pipe(csv())
           .on('data', (row) => {
-              console.log('Processing row:', row); // Log the row data to see what's being parsed
-
+            
               // Destructure the row into variables
               const { Day, Skill, 'From Hour': timeBegin, 'To Hour': timeEnd, Requirement } = row;
 
@@ -227,7 +222,7 @@ app.post('/upload-require-employees', authenticateToken, upload.single('file'), 
                   for (const requireShift of requireData) {
                       try {
                           await pool.query(query, requireShift);
-                          console.log('Inserted required shift:', requireShift); // Confirm insertion
+                         
                       } catch (err) {
                           console.error('Error inserting required shift data:', err); // Log any errors during insertion
                       }
@@ -382,295 +377,6 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Profile Route
-app.get('/profile', authenticateToken, async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [req.user.email]);
-    res.json(result.rows[0]);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Add Employee Route
-app.post('/add-employee', authenticateToken, async (req, res) => {
-  const { id, name, skill1, skill2, skill3, shifts_wanted } = req.body;
-
-  try {
-    // Look up the company name based on the authenticated user's email
-    const userResult = await pool.query('SELECT company_name FROM users WHERE email = $1', [req.user.email]);
-    const companyName = userResult.rows[0].company_name;
-
-    // Sanitize the company name for use as a schema name
-    const schemaName = sanitizeSchemaName(companyName);
-
-    // Check if the ID already exists
-    const idCheck = await pool.query(`SELECT * FROM ${schemaName}.employees WHERE id = $1`, [id]);
-    if (idCheck.rows.length > 0) {
-      return res.status(400).json({ error: 'ID already exists' });
-    }
-
-    // Insert the employee into the company's employees table
-    const result = await pool.query(`
-      INSERT INTO ${schemaName}.employees (id, name, skill1, skill2, skill3, shifts_wanted)
-      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
-    `, [id, name, skill1, skill2, skill3, shifts_wanted]);
-
-    res.json({ message: 'Employee added', employee: result.rows[0] });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Add Shift Route
-app.post('/add-shift', authenticateToken, async (req, res) => {
-  const { skill, day, time_begin, time_end, price } = req.body;
-
-  try {
-    // Look up the company name based on the authenticated user's email
-    const userResult = await pool.query('SELECT company_name FROM users WHERE email = $1', [req.user.email]);
-    const companyName = userResult.rows[0].company_name;
-
-    // Sanitize the company name for use as a schema name
-    const schemaName = sanitizeSchemaName(companyName);
-
-    // Insert the shift into the company's shifts_types table
-    const result = await pool.query(`
-      INSERT INTO ${schemaName}.shifts_types (skill, day, time_begin, time_end, price)
-      VALUES ($1, $2, $3, $4, $5) RETURNING *
-    `, [skill, day, time_begin, time_end, price]);
-
-    res.json({ message: 'Shift added', shift: result.rows[0] });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Add Shift Requirement Route
-app.post('/add-shift-require', authenticateToken, async (req, res) => {
-  const { day, skill, time_begin, time_end, require } = req.body;
-
-  try {
-    // Look up the company name based on the authenticated user's email
-    const userResult = await pool.query('SELECT company_name FROM users WHERE email = $1', [req.user.email]);
-    const companyName = userResult.rows[0].company_name;
-
-    // Sanitize the company name for use as a schema name
-    const schemaName = sanitizeSchemaName(companyName);
-
-    // Insert the shift requirement into the company's shifts_require table
-    const result = await pool.query(`
-      INSERT INTO ${schemaName}.shifts_require (day, skill, time_begin, time_end, require)
-      VALUES ($1, $2, $3, $4, $5) RETURNING *
-    `, [day, skill, time_begin, time_end, require]);
-
-    res.json({ message: 'Shift requirement added', shiftRequire: result.rows[0] });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Update Employee Route
-app.put('/update-employee/:id', authenticateToken, async (req, res) => {
-  const { id } = req.params;
-  const { name, skill1, skill2, skill3, shifts_wanted } = req.body;
-
-  try {
-    // Look up the company name based on the authenticated user's email
-    const userResult = await pool.query('SELECT company_name FROM users WHERE email = $1', [req.user.email]);
-    const companyName = userResult.rows[0].company_name;
-
-    // Sanitize the company name for use as a schema name
-    const schemaName = sanitizeSchemaName(companyName);
-
-    // Build the update query dynamically based on provided fields
-    const updateFields = [];
-    const values = [id];
-    let paramIndex = 2;
-
-    if (name) {
-      updateFields.push(`name = $${paramIndex}`);
-      values.push(name);
-      paramIndex++;
-    }
-    if (skill1) {
-      updateFields.push(`skill1 = $${paramIndex}`);
-      values.push(skill1);
-      paramIndex++;
-    }
-    if (skill2) {
-      updateFields.push(`skill2 = $${paramIndex}`);
-      values.push(skill2);
-      paramIndex++;
-    }
-    if (skill3) {
-      updateFields.push(`skill3 = $${paramIndex}`);
-      values.push(skill3);
-      paramIndex++;
-    }
-    if (shifts_wanted !== undefined) {
-      updateFields.push(`shifts_wanted = $${paramIndex}`);
-      values.push(shifts_wanted);
-      paramIndex++;
-    }
-
-    if (updateFields.length === 0) {
-      return res.status(400).json({ error: 'No valid fields to update' });
-    }
-
-    const updateQuery = `
-      UPDATE ${schemaName}.employees
-      SET ${updateFields.join(', ')}
-      WHERE id = $1
-      RETURNING *
-    `;
-
-    const result = await pool.query(updateQuery, values);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Employee not found' });
-    }
-
-    res.json({ message: 'Employee updated', employee: result.rows[0] });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Update Shift Route
-app.put('/update-shift/:id', authenticateToken, async (req, res) => {
-  const { id } = req.params;
-  const { skill, day, time_begin, time_end, price } = req.body;
-
-  try {
-    // Look up the company name based on the authenticated user's email
-    const userResult = await pool.query('SELECT company_name FROM users WHERE email = $1', [req.user.email]);
-    const companyName = userResult.rows[0].company_name;
-
-    // Sanitize the company name for use as a schema name
-    const schemaName = sanitizeSchemaName(companyName);
-
-    // Build the update query dynamically based on provided fields
-    const updateFields = [];
-    const values = [id];
-    let paramIndex = 2;
-
-    if (skill) {
-      updateFields.push(`skill = $${paramIndex}`);
-      values.push(skill);
-      paramIndex++;
-    }
-    if (day) {
-      updateFields.push(`day = $${paramIndex}`);
-      values.push(day);
-      paramIndex++;
-    }
-    if (time_begin) {
-      updateFields.push(`time_begin = $${paramIndex}`);
-      values.push(time_begin);
-      paramIndex++;
-    }
-    if (time_end) {
-      updateFields.push(`time_end = $${paramIndex}`);
-      values.push(time_end);
-      paramIndex++;
-    }
-    if (price !== undefined) {
-      updateFields.push(`price = $${paramIndex}`);
-      values.push(price);
-      paramIndex++;
-    }
-
-    if (updateFields.length === 0) {
-      return res.status(400).json({ error: 'No valid fields to update' });
-    }
-
-    const updateQuery = `
-      UPDATE ${schemaName}.shifts_types
-      SET ${updateFields.join(', ')}
-      WHERE id = $1
-      RETURNING *
-    `;
-
-    const result = await pool.query(updateQuery, values);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Shift not found' });
-    }
-
-    res.json({ message: 'Shift updated', shift: result.rows[0] });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Update Shift Requirement Route
-app.put('/update-shift-require/:id', authenticateToken, async (req, res) => {
-  const { id } = req.params;
-  const { day, skill, time_begin, time_end, require } = req.body;
-
-  try {
-    // Look up the company name based on the authenticated user's email
-    const userResult = await pool.query('SELECT company_name FROM users WHERE email = $1', [req.user.email]);
-    const companyName = userResult.rows[0].company_name;
-
-    // Sanitize the company name for use as a schema name
-    const schemaName = sanitizeSchemaName(companyName);
-
-    // Build the update query dynamically based on provided fields
-    const updateFields = [];
-    const values = [id];
-    let paramIndex = 2;
-
-    if (day) {
-      updateFields.push(`day = $${paramIndex}`);
-      values.push(day);
-      paramIndex++;
-    }
-    if (skill) {
-      updateFields.push(`skill = $${paramIndex}`);
-      values.push(skill);
-      paramIndex++;
-    }
-    if (time_begin) {
-      updateFields.push(`time_begin = $${paramIndex}`);
-      values.push(time_begin);
-      paramIndex++;
-    }
-    if (time_end) {
-      updateFields.push(`time_end = $${paramIndex}`);
-      values.push(time_end);
-      paramIndex++;
-    }
-    if (require !== undefined) {
-      updateFields.push(`require = $${paramIndex}`);
-      values.push(require);
-      paramIndex++;
-    }
-
-    if (updateFields.length === 0) {
-      return res.status(400).json({ error: 'No valid fields to update' });
-    }
-
-    const updateQuery = `
-      UPDATE ${schemaName}.shifts_require
-      SET ${updateFields.join(', ')}
-      WHERE id = $1
-      RETURNING *
-    `;
-
-    const result = await pool.query(updateQuery, values);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Shift requirement not found' });
-    }
-
-    res.json({ message: 'Shift requirement updated', shiftRequire: result.rows[0] });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // Route to get all employees
 app.get('/employees', authenticateToken, async (req, res) => {
   try {
@@ -762,26 +468,6 @@ app.get('/assignments', authenticateToken, async (req, res) => {
 });
 
 
-// Get shifts requirements for a specific day
-app.get('/shift-requirements/:day', authenticateToken, async (req, res) => {
-  const { day } = req.params;
-  try {
-    // Look up the company name based on the authenticated user's email
-    const userResult = await pool.query('SELECT company_name FROM users WHERE email = $1', [req.user.email]);
-    const companyName = userResult.rows[0].company_name;
-
-    // Sanitize the company name for use as a schema name
-    const schemaName = sanitizeSchemaName(companyName);
-
-    // Fetch shift requirements for the specific day
-    const result = await pool.query(`SELECT * FROM ${schemaName}.shifts_require WHERE day = $1`, [day]);
-
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 const axios = require('axios');
 
 // New Endpoint to Optimize Schedule
@@ -793,14 +479,12 @@ app.post('/optimize-schedule', authenticateToken, async (req, res) => {
 
   try {
     // Step 1: Fetch company name and schema
-    console.log("Fetching company details...");
     const userResult = await pool.query('SELECT company_name FROM users WHERE email = $1', [email]);
     const companyName = userResult.rows[0].company_name;
     const schemaName = sanitizeSchemaName(companyName);
     
 
     // Step 2: Fetch shift requirements and shift types
-    console.log("Fetching shift requirements and shift types...");
     const shiftReqQuery = `SELECT day, skill, time_begin, time_end, require FROM ${schemaName}.shifts_require`;
     const shiftsQuery = `SELECT skill, day, time_begin, time_end, price FROM ${schemaName}.shifts_types`;
     
@@ -812,12 +496,10 @@ app.post('/optimize-schedule', authenticateToken, async (req, res) => {
     const shifts = shiftsResult.rows;
 
     // Step 3: Convert shift data to CSV format
-    console.log("Converting shift requirements and shift types to CSV...");
     const shiftRequirementsCsv = jsonToCsv(shiftRequirements);
     const shiftsCsv = jsonToCsv(shifts);
   
     // Step 4: Prepare form data and send to Flask
-    console.log("Sending data to Flask server...");
     const formData = new FormData();
     formData.append('req_shifts', shiftRequirementsCsv, 'req_shifts.csv');
     formData.append('shifts', shiftsCsv, 'shifts.csv');
@@ -833,7 +515,7 @@ app.post('/optimize-schedule', authenticateToken, async (req, res) => {
       const solutionCsv = flaskResponse.data.solution;
 
       // Step 6: Delete existing results from database
-      console.log("Clearing previous results from database...");
+      console.log();
       await pool.query(`DELETE FROM ${schemaName}.results`);
 
       // Step 7: Insert new results into the database
@@ -1015,14 +697,11 @@ app.get('/get-images', authenticateToken, async (req, res) => {
 
     // Fetch image paths from the database
     const result = await pool.query(`SELECT path FROM ${schemaName}.skills_days_images`);
-    console.log(result)
     // Prepare the response by mapping through the results
     const images = result.rows.map(row => ({
       path: row.path // Store the path to the image
     }));
-    console.log(images);
     res.json(images); // Send the image paths back to the client
-    console.log(images);
   } catch (error) {
     console.error('Error fetching images:', error);
     res.status(500).json({ error: error.message });
@@ -1083,6 +762,7 @@ app.post('/charts', authenticateToken, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
 
 
 
